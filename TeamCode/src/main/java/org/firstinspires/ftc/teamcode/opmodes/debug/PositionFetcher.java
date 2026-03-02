@@ -15,6 +15,8 @@ import dev.nextftc.extensions.pedro.PedroDriverControlled;
 import dev.nextftc.ftc.Gamepads;
 import dev.nextftc.ftc.NextFTCOpMode;
 
+import static dev.nextftc.bindings.Bindings.*;
+
 import org.firstinspires.ftc.teamcode.Configuration;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 
@@ -28,8 +30,6 @@ public class PositionFetcher extends NextFTCOpMode {
 
     // Saved positions list
     private final List<Pose> savedPositions = new ArrayList<>();
-    private boolean aButtonPressed = false;
-    private boolean bButtonPressed = false; // debounce for B (clear)
 
     public PositionFetcher() {
         addComponents(
@@ -67,6 +67,15 @@ public class PositionFetcher extends NextFTCOpMode {
         );
 
         driverControlled.schedule();
+
+        button(() -> gamepad1.a)
+                .whenTrue(() -> {
+                    Pose p = PedroComponent.follower().getPose();
+                    savedPositions.add(new Pose(p.getX(), p.getY(), p.getHeading()));
+                });
+
+        button(() -> gamepad1.b)
+                .whenTrue(() -> savedPositions.clear());
     }
 
     @Override
@@ -79,21 +88,6 @@ public class PositionFetcher extends NextFTCOpMode {
         Pose currentPose = PedroComponent.follower().getPose();
         double headingDeg = Math.toDegrees(currentPose.getHeading());
 
-        // Handle A button press to save position (with debounce)
-        if (gamepad1.a && !aButtonPressed) {
-            aButtonPressed = true;
-            savedPositions.add(new Pose(currentPose.getX(), currentPose.getY(), currentPose.getHeading()));
-        } else if (!gamepad1.a) {
-            aButtonPressed = false;
-        }
-
-        // Handle B button press to clear saved positions (with debounce)
-        if (gamepad1.b && !bButtonPressed) {
-            bButtonPressed = true;
-            savedPositions.clear();
-        } else if (!gamepad1.b) {
-            bButtonPressed = false;
-        }
 
         // Telemetry
         telemetry.addLine("=== Current Position ===");
@@ -139,7 +133,6 @@ public class PositionFetcher extends NextFTCOpMode {
                     i + 1, p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
         }
 
-        // Also print as Java code for easy copy-paste
         telemetry.addLine("");
         telemetry.addLine("=== Copy-Paste Java Code ===");
         for (int i = 0; i < savedPositions.size(); i++) {

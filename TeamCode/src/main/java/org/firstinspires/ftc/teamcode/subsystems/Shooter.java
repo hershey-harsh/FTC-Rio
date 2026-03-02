@@ -2,65 +2,49 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
-import dev.nextftc.control.feedback.PIDCoefficients;
-import dev.nextftc.control.feedforward.BasicFeedforwardParameters;
 
 import org.firstinspires.ftc.teamcode.Configuration;
-
 
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.utility.InstantCommand;
 import dev.nextftc.core.subsystems.Subsystem;
-import dev.nextftc.control.ControlSystem;
 import dev.nextftc.ftc.ActiveOpMode;
-import dev.nextftc.hardware.controllable.MotorGroup;
-import dev.nextftc.hardware.controllable.RunToVelocity;
 import dev.nextftc.hardware.impl.MotorEx;
 import dev.nextftc.hardware.impl.ServoEx;
 import dev.nextftc.hardware.positionable.ServoGroup;
-
 
 public class Shooter implements Subsystem {
     public static final Shooter INSTANCE = new Shooter();
 
     public static final double TICKS_PER_REV = 28.0;
-    public static final double GEAR_RATIO = 1.0; // Direct drive (motor RPM = flywheel RPM)
+
+    public static double kP = 0.001, kI = 0, kD = 0, kF = 0.00015;
+//    private PIDController velController;
+    private VoltageSensor voltageSensor;
 
     public static double HOOD_INCREMENT = 0.05;
     public static double RPM_INCREMENT = 100.0;
 
-    public static PIDCoefficients coefficients = new PIDCoefficients(0.0125, 0.0, 0.0001);
-    public static BasicFeedforwardParameters ffcoefficients = new BasicFeedforwardParameters(0.0, 0.0, 0.0);
-
     public MotorEx flywheelMotor1;
     public MotorEx flywheelMotor2;
-    public MotorGroup flywheelMotor;
 
     public ServoEx hoodServo1;
     public ServoEx hoodServo2;
     public ServoGroup hoodServo;
 
-    private ControlSystem controlSystem;
-
-    public double FLYWHEEL_RPM;
     public double FLYWHEEL_RPM_GOAL = 0;
-    private double FLYWHEEL_RPM_INTOLERANCE = 100.0;
 
-    private final double ratio = 32.0/340.0, range = 355;
     public double HOOD_ANGLE = 70;
     public double HOOD_POSITION = 0.1;
     public double MIN_HOOD_ANGLE = 43.0;
     public double MAX_HOOD_ANGLE = 70.0;
 
     public Mode mode = Mode.odometry;
-
-    // Flywheel radius in meters (for velocity calculation)
-    private static final double FLYWHEEL_RADIUS_METERS = 0.036;
 
     public double GOAL_DISTANCE = 0;
 
@@ -78,24 +62,20 @@ public class Shooter implements Subsystem {
         flywheelMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheelMotor2.getMotor().setDirection(DcMotorEx.Direction.FORWARD);
 
-        flywheelMotor = new MotorGroup(flywheelMotor1, flywheelMotor2);
-
         hoodServo1 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_LEFT));
         hoodServo2 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_RIGHT));
         hoodServo2.getServo().setDirection(Servo.Direction.REVERSE);
         hoodServo = new ServoGroup(hoodServo1, hoodServo2);
 
-        controlSystem = ControlSystem.builder()
-                .velPid(coefficients)
-                .basicFF(ffcoefficients)
-                .build();
+//        velController = new PIDController(kP, kI, kD);
+        voltageSensor = ActiveOpMode.hardwareMap().voltageSensor.iterator().next();
     }
 
     @Override
     public void periodic() {
         Pose pose = Configuration.CURRENT_POSE;
 
-        if (Configuration.ALLIANCE == Configuration.ALLIANCE.RED) {
+        if (Configuration.ALLIANCE == Configuration.Alliance.RED) {
             GOAL_DISTANCE = Math.hypot(
                     (Configuration.RED_GOAL_POSE.getX() + Configuration.X_GOAL_OFFSET) - pose.getX(),
                     (Configuration.RED_GOAL_POSE.getY() + Configuration.Y_GOAL_OFFSET) - pose.getY());
@@ -105,132 +85,167 @@ public class Shooter implements Subsystem {
                     (Configuration.BLUE_GOAL_POSE.getY() + Configuration.Y_GOAL_OFFSET) - pose.getY());
         }
 
-        if (mode == Shooter.Mode.odometry) {
-            // Use math model to calculate RPM based on current hood position
-            double distMeters = GOAL_DISTANCE * 0.0254;
-            FLYWHEEL_RPM_GOAL = fetchRPM(distMeters, HOOD_ANGLE);
-            setTargetRPM(FLYWHEEL_RPM_GOAL, FLYWHEEL_RPM_INTOLERANCE);
+        // Always update readRPM so telemetry is fresh regardless of shooter mode
+        // Motor1 is set REVERSE so raw velocity is already negative when spinning forward — no extra negation needed
+        double encoderVelocity = flywheelMotor1.getState().getVelocity();
+        readRPM = Math.abs(((encoderVelocity * 60.0) / TICKS_PER_REV) * (16.0 / 16.0));
+
+        // Hood angle is computed here; SOTM kinematics and RPM are handled in onUpdate
+        double distMeters = GOAL_DISTANCE * 0.0254;
+        HOOD_ANGLE = getHoodAngle(distMeters);
+        if (mode == Mode.odometry) {
+            setHoodAngle(HOOD_ANGLE);
         }
-
-        //TODO: Add manual mode.
-
-        flywheelMotor.setPower(controlSystem.calculate(flywheelMotor1.getState()));
-    }
-
-    public void setTargetRPM(double FLYWHEEL_RPM, double FLYWHEEL_RPM_INTOLERANCE){
-        this.FLYWHEEL_RPM = FLYWHEEL_RPM;
-        this.FLYWHEEL_RPM_INTOLERANCE = FLYWHEEL_RPM_INTOLERANCE;
-
-        double motorVelocity = rpmToVelocity(FLYWHEEL_RPM);
-        double toleranceVelocity = rpmToVelocity(FLYWHEEL_RPM_INTOLERANCE);
-
-        new RunToVelocity(controlSystem, motorVelocity, toleranceVelocity).schedule();
-    }
-
-    public static double velocityToRPM(double ticksPerSec) { return ticksPerSec * 60.0 / TICKS_PER_REV; }
-
-    public static double rpmToVelocity(double rpm) {
-        return rpm * TICKS_PER_REV / 60.0;
     }
 
     public void setHoodAngle(double degrees) {
-        // Clamp degrees to valid range (43 to 70)
         if (degrees >= 70) {
             degrees = 70;
         } else if (degrees <= 43) {
             degrees = 43;
         }
-
         HOOD_ANGLE = degrees;
-
         HOOD_POSITION = 0.1 + (70 - degrees) * (0.9 / 27.0);
         hoodServo.setPosition(HOOD_POSITION);
     }
 
-    private double a = 0, b = 0, c = 0, n = 0, t_u = 0, t_g = 0, tof = 0, vX = 0, vY = 0, v = 0, m = 0;
-
     public double getHoodAngle(double meters) {
-        return Math.max((-4.8701*meters) + 59.754, 42);
+        return Math.max((-4.8701 * meters) + 59.754, 43);
     }
 
-    public double fetchRPM(double distMeters, double hoodAngle) {
-        a = (-distMeters * Math.tan(Math.toRadians(hoodAngle)) + Configuration.SHOOTER_HEIGHT_TO_GOAL) / (distMeters * distMeters);
-        b = -Math.tan(Math.toRadians(hoodAngle))-(2*a*distMeters);
-        n = -b/(2*a);
-        m = (a * (n*n)) + (b * (n)) + Configuration.SHOOTER_HEIGHT_TO_GOAL;
+    private double a, b, n, t_u, t_g, tof, vX, vY, v, m;
+    private double kinematicRPMGoal = 0;
 
-        t_u = Math.sqrt((2*m) / 9.8);
-        t_g = Math.sqrt((2*(m-Configuration.SHOOTER_HEIGHT_TO_GOAL)) / 9.8);
+    public static double w = Configuration.SHOOTER_HEIGHT_TO_GOAL;
+    public static double vcWeight = 0.37;
+    public static double RPM_OFFSET = 0;
+    public static double FAR_DISTANCE_THRESHOLD = 3.0; // meters
+    public static double FAR_RPM = 4400;
+    public static double FAR_HOOD_ANGLE = 50;
+
+    public void updateKinematics(double distMeters, double hoodAngleRad) {
+        a = (-distMeters * Math.tan(hoodAngleRad) + w) / (distMeters * distMeters);
+        b = -Math.tan(hoodAngleRad) - (2 * a * distMeters);
+        n = -b / (2 * a);
+        m = (a * (n * n)) + (b * n) + w;
+
+        t_u = Math.sqrt((2 * m) / 9.8);
+        t_g = Math.sqrt((2 * (m - w)) / 9.8);
         tof = t_u + t_g;
 
-        vX = distMeters/tof;
-        vY = (m - 0.5*(-9.8)*(t_u*t_u))/t_u;
+        vX = distMeters / tof;
+        vY = (m - 0.5 * (-9.8) * (t_u * t_u)) / t_u;
 
-        v = Math.sqrt((vX*vX) + (vY*vY));
-        if (GOAL_DISTANCE * 0.0254 > 4) {
-            return (v / (2*Math.PI * 0.036)) * 60 * 3;
+        v = Math.sqrt((vX * vX) + (vY * vY)) * 2.1;
+
+        kinematicRPMGoal = (v / (2 * Math.PI * 0.036)) * 60;
+    }
+
+    public double shooterVKinematic() { return v; }
+    public double getTof() { return tof; }
+    public double getKinematicRPMGoal() { return kinematicRPMGoal; }
+
+    public double vMSToRPM(double vMS) {
+        return (vMS / (2 * Math.PI * 0.036)) * 60;
+    }
+
+    public double targetRPM = 0;
+    public double readRPM = 0;
+    public double runMs = 0;
+
+    private final ElapsedTime functionRunLength = new ElapsedTime();
+
+    /** Bang-bang controller — use when close to goal. */
+    public void runShooterClose() {
+        functionRunLength.reset();
+
+        if (readRPM < targetRPM) {
+            flywheelMotor1.getMotor().setPower(1);
+            flywheelMotor2.getMotor().setPower(1);
+        } else {
+            flywheelMotor1.getMotor().setPower(0);
+            flywheelMotor2.getMotor().setPower(0);
         }
-        return (v / (2*Math.PI * 0.036)) * 60 * 2.2;
+
+        runMs = functionRunLength.milliseconds();
     }
 
-    /// 97.827, 47.5
-    /// 54.367, 58.5
-    /// 102.06, 52
-    /// 78.87, 48
+    /** Fixed RPM + hood for far shots (> FAR_DISTANCE_THRESHOLD). */
+    public void runShooterFar() {
+        functionRunLength.reset();
 
-    public double getTOF(double distMeters, double hoodAngleRad) {
-        a = (-distMeters * Math.tan(hoodAngleRad) + Configuration.SHOOTER_HEIGHT_TO_GOAL) / (distMeters * distMeters);
-        b = -Math.tan(hoodAngleRad)-(2*a*distMeters);
-        n = -b/(2*a);
-        m = (a * (n*n)) + (b * (n)) + Configuration.SHOOTER_HEIGHT_TO_GOAL;
+        setHoodAngle(FAR_HOOD_ANGLE);
+        targetRPM = FAR_RPM + RPM_OFFSET;
 
-        t_u = Math.sqrt((2*m) / 9.8);
-        t_g = Math.sqrt((2*(m-Configuration.SHOOTER_HEIGHT_TO_GOAL)) / 9.8);
-        tof = t_u + t_g;
+        if (readRPM < targetRPM) {
+            flywheelMotor1.getMotor().setPower(1);
+            flywheelMotor2.getMotor().setPower(1);
+        } else {
+            flywheelMotor1.getMotor().setPower(0);
+            flywheelMotor2.getMotor().setPower(0);
+        }
 
-        return tof;
+        runMs = functionRunLength.milliseconds();
     }
 
-    public Command changeToManual() {
-        return new InstantCommand(() -> {
-            mode = Shooter.Mode.manual;
-            setTargetRPM(3800, FLYWHEEL_RPM_INTOLERANCE);
-        });
+//    public void runShooter() {
+//        functionRunLength.reset();
+//
+//        double encoderVelocity = -flywheelMotor1.getState().getVelocity();
+//        double rpm = ((encoderVelocity * 60.0) / TICKS_PER_REV) * (55.0 / 65.0);
+//        readRPM = rpm;
+//
+//        double power = velController.calculate(rpm, targetRPM) + (kF * targetRPM);
+//        double scalar = 13.2 / voltageSensor.getVoltage();
+//
+//        flywheelMotor1.getMotor().setPower(power * scalar);
+//        flywheelMotor2.getMotor().setPower(power * scalar);
+//
+//        runMs = functionRunLength.milliseconds();
+//    }
+
+    public void stopShooter() {
+        flywheelMotor1.getMotor().setPower(0);
+        flywheelMotor2.getMotor().setPower(0);
     }
 
-    public Command changeToAuto() {
-        return new InstantCommand(() -> {
-            mode = Shooter.Mode.odometry;
-        });
+    public double getWeight() {
+        if (!Double.isNaN(tof)) {
+            return tof + Configuration.ARTIFACT_TRANSFER_TIME;
+        }
+        return 0.3;
     }
+
+    // ── Commands ──────────────────────────────────────────────────────────────
 
     public Command on() {
         return new InstantCommand(() -> {
             flywheelMotor1.getMotor().setMotorEnable();
             flywheelMotor2.getMotor().setMotorEnable();
-            mode = Shooter.Mode.odometry;
+            mode = Mode.odometry;
         });
     }
 
     public Command off() {
         return new InstantCommand(() -> {
-            mode = Shooter.Mode.manual;
-            setTargetRPM(0, FLYWHEEL_RPM_INTOLERANCE);
+            mode = Mode.manual;
+            stopShooter();
         });
     }
 
     public Command start() {
         return new InstantCommand(() -> {
-            mode = Shooter.Mode.manual;
+            mode = Mode.manual;
             hoodServo1.getServo().getController().pwmEnable();
             hoodServo2.getServo().getController().pwmEnable();
             flywheelMotor1.getMotor().setMotorEnable();
             flywheelMotor2.getMotor().setMotorEnable();
         });
     }
+
     public Command emergencyStop() {
         return new InstantCommand(() -> {
-            mode = Shooter.Mode.manual;
+            mode = Mode.manual;
             hoodServo1.getServo().getController().pwmDisable();
             hoodServo2.getServo().getController().pwmDisable();
             flywheelMotor1.getMotor().setMotorDisable();
@@ -238,39 +253,35 @@ public class Shooter implements Subsystem {
         });
     }
 
+    public Command changeToManual() {
+        return new InstantCommand(() -> mode = Mode.manual);
+    }
+
+    public Command changeToAuto() {
+        return new InstantCommand(() -> mode = Mode.odometry);
+    }
+
     public Command increaseHood() {
         return new InstantCommand(() -> {
             if (mode != Mode.manual) return;
-            double newAngle = HOOD_ANGLE + HOOD_INCREMENT;
-            if (newAngle > MAX_HOOD_ANGLE) {
-                newAngle = MAX_HOOD_ANGLE;
-            }
-            HOOD_ANGLE = newAngle;
-            setHoodAngle(HOOD_ANGLE);
+            double newAngle = Math.min(HOOD_ANGLE + HOOD_INCREMENT, MAX_HOOD_ANGLE);
+            setHoodAngle(newAngle);
         });
     }
 
     public Command decreaseHood() {
         return new InstantCommand(() -> {
             if (mode != Mode.manual) return;
-            double newAngle = HOOD_ANGLE - HOOD_INCREMENT;
-            if (newAngle < MIN_HOOD_ANGLE) {
-                newAngle = MIN_HOOD_ANGLE;
-            }
-            HOOD_ANGLE = newAngle;
-            setHoodAngle(HOOD_ANGLE);
+            double newAngle = Math.max(HOOD_ANGLE - HOOD_INCREMENT, MIN_HOOD_ANGLE);
+            setHoodAngle(newAngle);
         });
     }
 
     public Command adjustShooterRPM(double stickValue) {
         return new InstantCommand(() -> {
             if (mode != Mode.manual) return;
-            double newRPM = FLYWHEEL_RPM + (stickValue * RPM_INCREMENT);
-            if (newRPM < 0) {
-                newRPM = 0;
-            }
-            setTargetRPM(newRPM, FLYWHEEL_RPM_INTOLERANCE);
+            targetRPM = Math.max(0, targetRPM + (stickValue * RPM_INCREMENT));
         });
     }
-
 }
+

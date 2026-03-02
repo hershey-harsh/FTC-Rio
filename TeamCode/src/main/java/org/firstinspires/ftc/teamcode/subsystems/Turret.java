@@ -26,7 +26,6 @@ public class Turret implements Subsystem {
     public ServoGroup turretServo;
 
     public double HEADING_DEGREE = 0, TARGET_DEGREE = 0, ODO_TARGET = 0, TURRET_POSITION = 0, TURRET_ANGLE = 0, ERROR = 0;
-    public double MANUAL_ANGLE = 0; // Stores the manual angle offset
 
     public Mode mode = Mode.odometry;
 
@@ -35,16 +34,12 @@ public class Turret implements Subsystem {
         odometry,
     }
 
-    private Turret() {}
-
     @Override
     public void initialize() {
         turretServo1 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.TURRET_SERVO_LEFT));
         turretServo2 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.TURRET_SERVO_RIGHT));
-//        turretServo2.getServo().setDirection(Servo.Direction.REVERSE);
         turretServo = new ServoGroup(turretServo1, turretServo2);
 
-        // Enable PWM so servos actually move
         turretServo1.getServo().getController().pwmEnable();
         turretServo2.getServo().getController().pwmEnable();
 
@@ -69,42 +64,18 @@ public class Turret implements Subsystem {
         }
 
         if (mode == Mode.odometry) {
-            // Calculate turret angle: angle to goal minus robot heading
-            // Normalize to get the shortest path
             TARGET_DEGREE = Math.toDegrees(ODO_TARGET) - HEADING_DEGREE;
             setAngle(TARGET_DEGREE);
         } else if (mode == Mode.manual) {
-            // In manual mode, use the stored MANUAL_ANGLE
             setAngle(TARGET_DEGREE);
         }
     }
 
     private void setAngle(double angle) {
-//        double angle;
-//        angle = AngleUnit.normalizeDegrees(target_angle + Configuration.TURRET_OFFSET);
         TURRET_ANGLE = angle + Configuration.TURRET_OFFSET;
-//
-//        boolean unreachable = false;
-//        if (angle > 165) {
-//            angle = 165;
-//            unreachable = true;
-//        } else if (angle < -155) {
-//            angle = -155;
-//            unreachable = true;
-//        }
-//
-////        if (unreachable) {
-////            Light.INSTANCE.setColor(YELLOW, Light.Target.TURRET).schedule();
-////        } else {
-////            Light.INSTANCE.setColor(GREEN, Light.Target.TURRET).schedule();
-////        }
-//
-//        TURRET_POSITION = (angle + 155) / 320;
-
         TURRET_POSITION = interpolateAngle(angle);
 
         turretServo.setPosition(TURRET_POSITION);
-//        turretServo2.setPosition(TURRET_POSITION);
     }
 
     private double interpolateAngle(double angle) {
@@ -115,9 +86,8 @@ public class Turret implements Subsystem {
             angle = -155;
         }
 
-//        double result = 0.5 - (angle) / 150;
-
-        double result = 0.5 - (angle * 0.25) / 90;
+//        double result = 0.5 - (angle * 0.25) / 90;
+        double result = 0.5 - (angle / 320.0) * (0.750 - 0.246) * 2;
 
         if (result > 0.750) {
             result = 0.750;
@@ -146,7 +116,7 @@ public class Turret implements Subsystem {
     public Command changeToManual() {
         return new InstantCommand(() -> {
             mode = Mode.manual;
-            MANUAL_ANGLE = 0; // Reset manual angle to 0 when switching to manual
+            TARGET_DEGREE = 0;
         });
     }
 
@@ -158,24 +128,22 @@ public class Turret implements Subsystem {
 
     public Command increaseAngle() {
         return new InstantCommand(() -> {
-            MANUAL_ANGLE = MANUAL_ANGLE + ANGLE_INCREMENT;
-            // Clamp to valid range
-            if (MANUAL_ANGLE > 165) {
-                MANUAL_ANGLE = 165;
-            } else if (MANUAL_ANGLE < -155) {
-                MANUAL_ANGLE = -155;
+            TARGET_DEGREE = TARGET_DEGREE + ANGLE_INCREMENT;
+            if (TARGET_DEGREE > 165) {
+                TARGET_DEGREE = 165;
+            } else if (TARGET_DEGREE < -155) {
+                TARGET_DEGREE = -155;
             }
         });
     }
 
     public Command decreaseAngle() {
         return new InstantCommand(() -> {
-            MANUAL_ANGLE = MANUAL_ANGLE - ANGLE_INCREMENT;
-            // Clamp to valid range
-            if (MANUAL_ANGLE > 165) {
-                MANUAL_ANGLE = 165;
-            } else if (MANUAL_ANGLE < -155) {
-                MANUAL_ANGLE = -155;
+            TARGET_DEGREE = TARGET_DEGREE - ANGLE_INCREMENT;
+            if (TARGET_DEGREE > 165) {
+                TARGET_DEGREE = 165;
+            } else if (TARGET_DEGREE < -155) {
+                TARGET_DEGREE = -155;
             }
         });
     }

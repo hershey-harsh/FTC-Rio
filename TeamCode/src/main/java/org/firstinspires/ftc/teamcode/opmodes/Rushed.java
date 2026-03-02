@@ -134,16 +134,16 @@ public class Rushed extends NextFTCOpMode {
 
         double goalDistance = Shooter.INSTANCE.GOAL_DISTANCE;
         double hoodAngle = Shooter.INSTANCE.HOOD_ANGLE;
-        double TOF = Shooter.INSTANCE.getTOF(goalDistance, Math.toRadians(hoodAngle));
+//        double TOF = Shooter.INSTANCE.getTOF(goalDistance, Math.toRadians(hoodAngle));
 
 //        Configuration.setAimPointOffset(-X_VELOCITY * Configuration.ARTIFACT_TRANSFER_TIME + TOF,
 //                -Y_VELOCITY * Configuration.ARTIFACT_TRANSFER_TIME + TOF);
 
-        telemetry.addData("COLOR R:", "%.3f", Transfer.redValues);
-        telemetry.addData("COLOR G:", "%.3f", Transfer.greenValues);
-        telemetry.addData("COLOR B:", "%.3f", Transfer.blueValues);
-        telemetry.addData("Is Purple:", Transfer.INSTANCE.isPurple());
-        telemetry.addData("Is Green:", Transfer.INSTANCE.isGreen());
+//        telemetry.addData("COLOR R:", "%.3f", Transfer.redValues);
+//        telemetry.addData("COLOR G:", "%.3f", Transfer.greenValues);
+//        telemetry.addData("COLOR B:", "%.3f", Transfer.blueValues);
+//        telemetry.addData("Is Purple:", Transfer.INSTANCE.isPurple());
+//        telemetry.addData("Is Green:", Transfer.INSTANCE.isGreen());
         telemetry.addData("=== Position ===", "");
         telemetry.addData("Position X:", PedroComponent.follower().getPose().getX());
         telemetry.addData("Position Y:", PedroComponent.follower().getPose().getY());

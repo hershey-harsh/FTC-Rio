@@ -147,7 +147,7 @@ public class RT1GM15 extends NextFTCOpMode {
     @Override
     public void onStop() {
         //Turret.INSTANCE.emergencyStop().schedule();
-        Transfer.INSTANCE.emergencyStop().schedule();
+        Transfer.INSTANCE.emergencyStopAll().schedule();
         //Shooter.INSTANCE.emergencyStop().schedule();
 
         telemetry.setAutoClear(false);

@@ -161,22 +161,22 @@ public class ShooterDebug extends NextFTCOpMode {
                 });
 
         // D-Pad Right - Increase RPM (only in MANUAL mode)
-        button(() -> gamepad1.dpad_right)
-                .whenBecomesTrue(() -> {
-                    if (shooterMode == ShooterMode.MANUAL) {
-                        targetRPM += RPM_INCREMENT;
-                        Shooter.INSTANCE.setTargetRPM(targetRPM, 100.0);
-                    }
-                });
-
-        // D-Pad Left - Decrease RPM (only in MANUAL mode)
-        button(() -> gamepad1.dpad_left)
-                .whenBecomesTrue(() -> {
-                    if (shooterMode == ShooterMode.MANUAL) {
-                        targetRPM = Math.max(0, targetRPM - RPM_INCREMENT);
-                        Shooter.INSTANCE.setTargetRPM(targetRPM, 100.0);
-                    }
-                });
+//        button(() -> gamepad1.dpad_right)
+//                .whenBecomesTrue(() -> {
+//                    if (shooterMode == ShooterMode.MANUAL) {
+//                        targetRPM += RPM_INCREMENT;
+//                        Shooter.INSTANCE.setTargetRPM(targetRPM, 100.0);
+//                    }
+//                });
+//
+//        // D-Pad Left - Decrease RPM (only in MANUAL mode)
+//        button(() -> gamepad1.dpad_left)
+//                .whenBecomesTrue(() -> {
+//                    if (shooterMode == ShooterMode.MANUAL) {
+//                        targetRPM = Math.max(0, targetRPM - RPM_INCREMENT);
+//                        Shooter.INSTANCE.setTargetRPM(targetRPM, 100.0);
+//                    }
+//                });
 
         // A Button - Run intake
         button(() -> gamepad1.a)
@@ -273,8 +273,8 @@ public class ShooterDebug extends NextFTCOpMode {
         // Actual RPM
         double m1VelocityTicks = Math.abs(Shooter.INSTANCE.flywheelMotor1.getMotor().getVelocity());
         double m2VelocityTicks = Math.abs(Shooter.INSTANCE.flywheelMotor2.getMotor().getVelocity());
-        telemetry.addData("M1 Actual RPM", Shooter.velocityToRPM(m1VelocityTicks));
-        telemetry.addData("M2 Actual RPM", Shooter.velocityToRPM(m2VelocityTicks));
+//        telemetry.addData("M1 Actual RPM", Shooter.velocityToRPM(m1VelocityTicks));
+//        telemetry.addData("M2 Actual RPM", Shooter.velocityToRPM(m2VelocityTicks));
 
         // Logged values
         telemetry.addLine();

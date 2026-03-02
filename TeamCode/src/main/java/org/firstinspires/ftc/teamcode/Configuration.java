@@ -19,7 +19,7 @@ public class Configuration {
     public static final String HOOD_SERVO_LEFT = "servo4B";
     public static final String HOOD_SERVO_RIGHT = "servo5B";
     public static final String ROBOT_LIGHT = "light";
-    public static final String TURRET_LIGHT = "turretLight";
+    public static final String TURRET_LIGHT = "servo5";
     public static final String RIGHT_TURRET_MOTOR = "motor0B";
     public static final String LEFT_TURRET_MOTOR = "motor1B";
 
@@ -36,9 +36,9 @@ public class Configuration {
         Y_GOAL_OFFSET = yOffset;
     }
 
-    public static double ARTIFACT_TRANSFER_TIME = 0.6;
-    public static double SHOOTER_HEIGHT_TO_GOAL = 0.7878 + 0.1;
-    public static double SHOOTER_TIME = 1.3;
+    public static double ARTIFACT_TRANSFER_TIME = 0.3;
+    public static double SHOOTER_HEIGHT_TO_GOAL = 0.7878;
+    public static double SHOOTER_TIME = 0.5;
 
 
     public static int RED_LIMELIGHT_PIPELINE = 0;

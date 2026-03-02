@@ -147,7 +147,7 @@ public class RBH3A extends NextFTCOpMode {
     @Override
     public void onStop() {
         //Turret.INSTANCE.emergencyStop().schedule();
-        Transfer.INSTANCE.emergencyStop().schedule();
+        Transfer.INSTANCE.emergencyStopAll().schedule();
         //Shooter.INSTANCE.emergencyStop().schedule();
 
         telemetry.setAutoClear(false);

@@ -1,0 +1,47 @@
+/**
+ * build.common.gradle
+ *
+ * Include this file in the individual module build.gradle files to
+ * temporarily configure them to use the FTC SDK. See TeamCode/build.gradle
+ * for a usage example.
+ *
+ * This file is a common gradle script that is applied to all modules that
+ * need to be built for the FTC robot controller.
+ */
+
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 34
+    buildToolsVersion '34.0.0'
+
+    defaultConfig {
+        applicationId 'com.qualcomm.ftcrobotcontroller'
+        minSdkVersion 24
+        targetSdkVersion 28
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            debuggable true
+            jniDebuggable true
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    ndkVersion '21.3.6528147'
+
+    packagingOptions {
+        pickFirst '**/*.so'
+        pickFirst '**/*.jar'
+    }
+}

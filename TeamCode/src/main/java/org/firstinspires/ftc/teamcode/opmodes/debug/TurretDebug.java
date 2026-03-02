@@ -128,7 +128,7 @@ public class TurretDebug extends NextFTCOpMode {
         telemetry.addData("Turret Mode", Turret.INSTANCE.mode);
         telemetry.addData("Turret Angle", Turret.INSTANCE.TURRET_ANGLE);
         telemetry.addData("Turret Position", Turret.INSTANCE.TURRET_POSITION);
-        telemetry.addData("Manual Angle", Turret.INSTANCE.MANUAL_ANGLE);
+        telemetry.addData("Manual Angle", Turret.INSTANCE.TURRET_ANGLE);
         telemetry.addData("Target Degree", Turret.INSTANCE.TARGET_DEGREE);
         telemetry.addData("Heading Degree", Turret.INSTANCE.HEADING_DEGREE);
         telemetry.addData("ODO Target", Turret.INSTANCE.ODO_TARGET);
@@ -150,8 +150,8 @@ public class TurretDebug extends NextFTCOpMode {
         telemetry.addData("Calculated Target RPM", Shooter.INSTANCE.FLYWHEEL_RPM_GOAL);
         double m1VelocityTicks = Math.abs(Shooter.INSTANCE.flywheelMotor1.getMotor().getVelocity());
         double m2VelocityTicks = Math.abs(Shooter.INSTANCE.flywheelMotor2.getMotor().getVelocity());
-        telemetry.addData("M1 Actual RPM", Shooter.velocityToRPM(m1VelocityTicks));
-        telemetry.addData("M2 Actual RPM", Shooter.velocityToRPM(m2VelocityTicks));
+//        telemetry.addData("M1 Actual RPM", Shooter.velocityToRPM(m1VelocityTicks));
+//        telemetry.addData("M2 Actual RPM", Shooter.velocityToRPM(m2VelocityTicks));
 
         // Servo telemetry
         telemetry.addLine();

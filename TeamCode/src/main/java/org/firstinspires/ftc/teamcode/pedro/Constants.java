@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedro;
 
-import com.pedropathing.control.FilteredPIDFCoefficients;
 import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.control.PredictiveBrakingCoefficients;
 import com.pedropathing.follower.Follower;
@@ -9,13 +8,12 @@ import com.pedropathing.ftc.FollowerBuilder;
 import com.pedropathing.ftc.localization.constants.PinpointConstants;
 import com.pedropathing.ftc.localization.localizers.PinpointLocalizer;
 import com.pedropathing.localization.FusionLocalizer;
-import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathConstraints;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.pedropathing.ftc.drivetrains.MecanumConstants;
-import com.pedropathing.geometry.BezierCurve;
+import com.pedropathing.ftc.drivetrains.MecanumEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Configuration;
@@ -57,7 +55,7 @@ public class Constants {
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .pathConstraints(pathConstraints)
-                .mecanumDrivetrain(driveConstants)
+                .setDrivetrain(new MecanumEx(hardwareMap, driveConstants))
                 .pinpointLocalizer(localizerConstants)
                 .build();
     }
@@ -84,7 +82,7 @@ public class Constants {
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .pathConstraints(pathConstraints)
                 .setLocalizer(Configuration.fusionLocalizer)
-                .mecanumDrivetrain(driveConstants)
+                .setDrivetrain(new MecanumEx(hardwareMap, driveConstants))
                 .build();
     }
 }

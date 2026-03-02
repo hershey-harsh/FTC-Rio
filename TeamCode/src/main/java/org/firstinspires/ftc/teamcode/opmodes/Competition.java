@@ -1,16 +1,23 @@
 package org.firstinspires.ftc.teamcode.opmodes;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import dev.nextftc.bindings.BindingManager;
+import dev.nextftc.bindings.Range;
 import dev.nextftc.core.components.BindingsComponent;
 import dev.nextftc.core.components.SubsystemComponent;
 import dev.nextftc.extensions.pedro.PedroComponent;
 import dev.nextftc.extensions.pedro.PedroDriverControlled;
 import dev.nextftc.ftc.Gamepads;
 import dev.nextftc.ftc.NextFTCOpMode;
+import dev.nextftc.hardware.controllable.Controllable;
 import dev.nextftc.hardware.driving.DriverControlledCommand;
+import dev.nextftc.hardware.driving.MecanumDriverControlled;
+import dev.nextftc.hardware.driving.RobotCentric;
+import dev.nextftc.hardware.impl.MotorEx;
 
 import static dev.nextftc.bindings.Bindings.*;
 import org.firstinspires.ftc.teamcode.Configuration;
@@ -21,7 +28,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 import org.firstinspires.ftc.teamcode.subsystems.Turret;
 
-@TeleOp(name = "TeleOp")
+@TeleOp(name = "Red Competition")
 public class Competition extends NextFTCOpMode {
     private double X_VELOCITY = 0;
     private double Y_VELOCITY = 0;
@@ -29,7 +36,12 @@ public class Competition extends NextFTCOpMode {
     double LOOP_TIME = 0;
     ElapsedTime LOOP_TIMER = new ElapsedTime();
 
+    private MotorEx frontLeftMotor = new MotorEx(Configuration.LEFT_FRONT_MOTOR).reversed();
+    private MotorEx frontRightMotor = new MotorEx(Configuration.RIGHT_FRONT_MOTOR);
+    private MotorEx backLeftMotor = new MotorEx(Configuration.LEFT_REAR_MOTOR).reversed();
+    private MotorEx backRightMotor = new MotorEx(Configuration.RIGHT_REAR_MOTOR);
     private DriverControlledCommand driverControlled;
+
     private boolean gamepad2Override = false;
 
     public Competition() {
@@ -46,19 +58,21 @@ public class Competition extends NextFTCOpMode {
 
     @Override
     public void onInit() {
-        Gamepads.gamepad1().leftStickY();
-        Gamepads.gamepad1().leftStickX();
-        Gamepads.gamepad1().rightStickX();
+        frontLeftMotor.getMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        frontRightMotor.getMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backLeftMotor.getMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        backRightMotor.getMotor().setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        PedroComponent.follower().setStartingPose(Configuration.CURRENT_POSE);
+//        PedroComponent.follower().setStartingPose(Configuration.CURRENT_POSE);
+        PedroComponent.follower().setStartingPose(new Pose(72, 72, Math.toRadians(270)));
     }
 
     @Override
     public void onStartButtonPressed() {
         driverControlled = new PedroDriverControlled(
-                Gamepads.gamepad1().leftStickY(),
+                Gamepads.gamepad1().leftStickY().negate(),
                 Gamepads.gamepad1().leftStickX(),
-                Gamepads.gamepad1().rightStickX(),
+                Gamepads.gamepad1().rightStickX().negate(),
                 !Configuration.FIELD_CENTRIC
         );
 
@@ -80,13 +94,13 @@ public class Competition extends NextFTCOpMode {
                 .whenTrue(() -> {
 //                    Light.INSTANCE.setBlinkingColor(Light.RED, 250).schedule();
                     Shooter.INSTANCE.emergencyStop().schedule();
-                    Transfer.INSTANCE.emergencyStop().schedule();
+                    Transfer.INSTANCE.emergencyStopAll().schedule();
                     Turret.INSTANCE.emergencyStop().schedule();
                 })
                 .whenBecomesFalse(() -> {
 //                    Light.INSTANCE.setColor(Light.GREEN, Light.Target.ROBOT).schedule();
                     Shooter.INSTANCE.start().schedule();
-                    Transfer.INSTANCE.start().schedule();
+                    Transfer.INSTANCE.startAll().schedule();
                     Turret.INSTANCE.start().schedule();
                 });
 
@@ -94,9 +108,8 @@ public class Competition extends NextFTCOpMode {
 
 //        button(() -> gamepad2.right_bumper)
 //                .toggleOnBecomesFalse()
-//                .whenBecomesTrue(() -> Turret.INSTANCE.changeToAuto())
-//                .whenBecomesFalse(() -> Turret.INSTANCE.changeToManual());
-///        GATE OPEN/CLOSE
+//                .whenBecomesTrue(() -> Turret.INSTANCE.changeToAuto().schedule())
+//                .whenBecomesFalse(() -> Turret.INSTANCE.changeToManual().schedule());
 
         button(() -> gamepad2.left_bumper)
                 .toggleOnBecomesFalse()
@@ -104,19 +117,18 @@ public class Competition extends NextFTCOpMode {
                 .whenBecomesFalse(() -> Shooter.INSTANCE.off().schedule());
 
         button(() -> gamepad2.right_bumper)
-                .toggleOnBecomesFalse()
-                .whenBecomesTrue(() -> Transfer.INSTANCE.openGate().schedule())
+                .whenTrue(() -> Transfer.INSTANCE.openGate().schedule())
                 .whenBecomesFalse(() -> Transfer.INSTANCE.closeGate().schedule());
 
-        button(() -> gamepad2.b)
-                .toggleOnBecomesFalse()
-                .whenBecomesTrue(() -> Transfer.INSTANCE.gate3Start().schedule())
-                .whenBecomesFalse(() -> Transfer.INSTANCE.gate3Stop().schedule());
-
+//        button(() -> gamepad2.b)
+//                .toggleOnBecomesFalse()
+//                .whenBecomesTrue(() -> Transfer.INSTANCE.gate3Start().schedule())
+//                .whenBecomesFalse(() -> Transfer.INSTANCE.gate3Stop().schedule());
+//
         button(() -> gamepad2.a)
                 .toggleOnBecomesFalse()
-                .whenBecomesTrue(() -> Transfer.INSTANCE.gate1And2Start().schedule())
-                .whenBecomesFalse(() -> Transfer.INSTANCE.gate1And2Stop().schedule());
+                .whenBecomesTrue(() -> Transfer.INSTANCE.intake().schedule())
+                .whenBecomesFalse(() -> Transfer.INSTANCE.outtake().schedule());
 
         button(() -> gamepad2.y)
                 .toggleOnBecomesFalse()
@@ -146,9 +158,9 @@ public class Competition extends NextFTCOpMode {
                     gamepad2Override = true;
                     driverControlled.cancel();
                     driverControlled = new PedroDriverControlled(
-                            Gamepads.gamepad2().leftStickY(),
-                            Gamepads.gamepad2().leftStickX(),
-                            Gamepads.gamepad2().rightStickX(),
+                            Gamepads.gamepad2().leftStickY().negate(),
+                            Gamepads.gamepad2().leftStickX().negate(),
+                            Gamepads.gamepad2().rightStickX().negate(),
                             !Configuration.FIELD_CENTRIC
                     );
                     driverControlled.schedule();
@@ -157,9 +169,9 @@ public class Competition extends NextFTCOpMode {
                     gamepad2Override = false;
                     driverControlled.cancel();
                     driverControlled = new PedroDriverControlled(
-                            Gamepads.gamepad1().leftStickY(),
-                            Gamepads.gamepad1().leftStickX(),
-                            Gamepads.gamepad1().rightStickX(),
+                            Gamepads.gamepad1().leftStickY().negate(),
+                            Gamepads.gamepad1().leftStickX().negate(),
+                            Gamepads.gamepad1().rightStickX().negate(),
                             !Configuration.FIELD_CENTRIC
                     );
                     driverControlled.schedule();
@@ -170,22 +182,24 @@ public class Competition extends NextFTCOpMode {
                 .whenTrue(() -> {
 //                    Light.INSTANCE.setBlinkingColor(Light.RED, 250).schedule();
                     Shooter.INSTANCE.emergencyStop().schedule();
-                    Transfer.INSTANCE.emergencyStop().schedule();
+                    Transfer.INSTANCE.emergencyStopAll().schedule();
                     Turret.INSTANCE.emergencyStop().schedule();
                 })
                 .whenBecomesFalse(() -> {
 //                    Light.INSTANCE.setColor(Light.GREEN, Light.Target.ROBOT).schedule();
                     Shooter.INSTANCE.start().schedule();
-                    Transfer.INSTANCE.start().schedule();
+                    Transfer.INSTANCE.startAll().schedule();
                     Turret.INSTANCE.start().schedule();
                 });
 
         //TODO: Test left stick x on Gamepad 2.
 
-        range(() -> !gamepad2Override ? gamepad2.left_stick_x : 0)
-                .deadZone(0.1)
+        Range shooterAdjustRange = Gamepads.gamepad2().leftStickX()
+                .map(value -> !gamepad2Override ? value : 0)
+                .deadZone(0.1);
+        shooterAdjustRange
                 .asButton(value -> value != 0)
-                .whenTrue(() -> Shooter.INSTANCE.adjustShooterRPM(gamepad2.left_stick_x));
+                .whenTrue(() -> Shooter.INSTANCE.adjustShooterRPM(shooterAdjustRange.get()).schedule());
     }
 
     @Override
@@ -194,6 +208,9 @@ public class Competition extends NextFTCOpMode {
 
         telemetry.addData("Loop Time (ms)", LOOP_TIME);
         telemetry.addData("Loop Time (hz)", (1000/LOOP_TIME));
+
+        Configuration.CURRENT_POSE = PedroComponent.follower().getPose();
+
         telemetry.addData("Drive Control", gamepad2Override ? "Gamepad 2" : "Gamepad 1");
 
         driverControlled.setScalar(Configuration.CONTROL_SCALE);
@@ -201,18 +218,42 @@ public class Competition extends NextFTCOpMode {
         X_VELOCITY = PedroComponent.follower().getVelocity().getXComponent();
         Y_VELOCITY = PedroComponent.follower().getVelocity().getYComponent();
 
-        double goalDistance = Shooter.INSTANCE.GOAL_DISTANCE;
-        double hoodAngle = Shooter.INSTANCE.HOOD_ANGLE;
-        double TOF = Shooter.INSTANCE.getTOF(goalDistance, Math.toRadians(hoodAngle));
+        // ── Shoot-on-the-move ──────────────────────────────────────────────────
+        if (Shooter.INSTANCE.mode == Shooter.Mode.odometry) {
+            double distMeters = Shooter.INSTANCE.GOAL_DISTANCE * 0.0254;
 
-        Configuration.setAimPointOffset(-X_VELOCITY * Configuration.ARTIFACT_TRANSFER_TIME + TOF,
-                -Y_VELOCITY * Configuration.ARTIFACT_TRANSFER_TIME + TOF);
+            if (distMeters > Shooter.FAR_DISTANCE_THRESHOLD) {
+                Configuration.TURRET_OFFSET = 3.5;
+                Shooter.INSTANCE.runShooterFar();
+            } else {
+                // Close shot — full SOTM correction
+                double hoodRad = Math.toRadians(Shooter.INSTANCE.HOOD_ANGLE);
+                double odoTarget = Turret.INSTANCE.ODO_TARGET;
 
-        telemetry.addData("COLOR R:", "%.3f", Transfer.redValues);
-        telemetry.addData("COLOR G:", "%.3f", Transfer.greenValues);
-        telemetry.addData("COLOR B:", "%.3f", Transfer.blueValues);
-        telemetry.addData("Is Purple:", Transfer.INSTANCE.isPurple());
-        telemetry.addData("Is Green:", Transfer.INSTANCE.isGreen());
+                Shooter.INSTANCE.updateKinematics(distMeters, hoodRad);
+
+                double weight = Shooter.INSTANCE.getWeight();
+                Configuration.setAimPointOffset(-X_VELOCITY * weight, -Y_VELOCITY * weight);
+
+                double vyr = ((Y_VELOCITY * 0.0254) * Math.sin(Math.PI / 2 - odoTarget))
+                           + ((X_VELOCITY * 0.0254) * Math.sin(odoTarget));
+                double vxr = -((Y_VELOCITY * 0.0254) * Math.cos(Math.PI / 2 - odoTarget))
+                           + ((X_VELOCITY * 0.0254) * Math.cos(odoTarget));
+
+                double vn = Shooter.INSTANCE.shooterVKinematic() + (vyr * Shooter.vcWeight);
+                double vt = Math.sqrt((vn * vn) + (vxr * vxr));
+
+                Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
+                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) + Shooter.RPM_OFFSET;
+                Configuration.TURRET_OFFSET = 2;
+                Shooter.INSTANCE.runShooterClose();
+            }
+        } else {
+            Shooter.INSTANCE.targetRPM = 0;
+            Shooter.INSTANCE.stopShooter();
+        }
+
+
         telemetry.addData("=== Position ===", "");
         telemetry.addData("Position X:", PedroComponent.follower().getPose().getX());
         telemetry.addData("Position Y:", PedroComponent.follower().getPose().getY());
@@ -224,16 +265,22 @@ public class Competition extends NextFTCOpMode {
 
         telemetry.addData("=== Turret ===", "");
         telemetry.addData("Turret Mode", Turret.INSTANCE.mode);
-//        telemetry.addData("Turret Angle", Turret.INSTANCE.TURRET_ANGLE);
+        telemetry.addData("Turret Angle", Turret.INSTANCE.TURRET_ANGLE);
 //        telemetry.addData("Turret Target", Turret.INSTANCE.TARGET_DEGREE);
 //        telemetry.addData("Turret Servo Pos", "%.3f", Turret.INSTANCE.TURRET_POSITION);
 
         telemetry.addData("=== Shooter ===", "");
-        telemetry.addData("Shooter Mode", Shooter.INSTANCE.mode);
-        telemetry.addData("Goal Distance", Shooter.INSTANCE.GOAL_DISTANCE);
-        //telemetry.addData("Flywheel RPM Goal", Shooter.INSTANCE.FLYWHEEL_RPM_GOAL);
+//        telemetry.addData("Shooter Mode", Shooter.INSTANCE.mode);
+        telemetry.addData("Goal Distance (in)", Shooter.INSTANCE.GOAL_DISTANCE);
+        telemetry.addData("Flywheel RPM (measured)", Shooter.INSTANCE.readRPM);
+        telemetry.addData("Flywheel RPM Goal (static)", Shooter.INSTANCE.getKinematicRPMGoal());
+        telemetry.addData("Flywheel RPM Goal (SOTM corrected)", Shooter.INSTANCE.targetRPM);
+        telemetry.addData("Hood Angle (deg)", Shooter.INSTANCE.HOOD_ANGLE);
+        telemetry.addData("Hood Position", Shooter.INSTANCE.HOOD_POSITION);
+        telemetry.addData("TOF estimate (s)", Shooter.INSTANCE.getTof());
+        telemetry.addData("Aim Weight (s)", Shooter.INSTANCE.getWeight());
         //telemetry.addData("Hood Angle", Shooter.INSTANCE.HOOD_ANGLE);
-        //telemetry.addData("Time of Flight", TOF);
+        //telemetry.addData("Close Run (ms)", Shooter.INSTANCE.runMs);
 
         BindingManager.update();
         telemetry.update();
