@@ -218,7 +218,6 @@ public class Competition extends NextFTCOpMode {
         X_VELOCITY = PedroComponent.follower().getVelocity().getXComponent();
         Y_VELOCITY = PedroComponent.follower().getVelocity().getYComponent();
 
-        // ── Shoot-on-the-move ──────────────────────────────────────────────────
         if (Shooter.INSTANCE.mode == Shooter.Mode.odometry) {
             double distMeters = Shooter.INSTANCE.GOAL_DISTANCE * 0.0254;
 
@@ -226,7 +225,7 @@ public class Competition extends NextFTCOpMode {
                 Configuration.TURRET_OFFSET = 3.5;
                 Shooter.INSTANCE.runShooterFar();
             } else {
-                // Close shot — full SOTM correction
+
                 double hoodRad = Math.toRadians(Shooter.INSTANCE.HOOD_ANGLE);
                 double odoTarget = Turret.INSTANCE.ODO_TARGET;
 

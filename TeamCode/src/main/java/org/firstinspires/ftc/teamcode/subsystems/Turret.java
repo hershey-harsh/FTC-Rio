@@ -86,8 +86,8 @@ public class Turret implements Subsystem {
             angle = -155;
         }
 
-//        double result = 0.5 - (angle * 0.25) / 90;
-        double result = 0.5 - (angle / 320.0) * (0.750 - 0.246) * 2;
+        double result = 0.5 - (angle * 0.25) / 90;
+//        double result = 0.5 - (angle / 320.0) * (0.750 - 0.246) * 2; // Should be faster??
 
         if (result > 0.750) {
             result = 0.750;

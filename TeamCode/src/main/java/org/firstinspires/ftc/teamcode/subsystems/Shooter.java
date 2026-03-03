@@ -23,9 +23,9 @@ public class Shooter implements Subsystem {
 
     public static final double TICKS_PER_REV = 28.0;
 
-    public static double kP = 0.001, kI = 0, kD = 0, kF = 0.00015;
+//    public static double kP = 0.001, kI = 0, kD = 0, kF = 0.00015;
 //    private PIDController velController;
-    private VoltageSensor voltageSensor;
+//    private VoltageSensor voltageSensor;
 
     public static double HOOD_INCREMENT = 0.05;
     public static double RPM_INCREMENT = 100.0;
@@ -68,7 +68,7 @@ public class Shooter implements Subsystem {
         hoodServo = new ServoGroup(hoodServo1, hoodServo2);
 
 //        velController = new PIDController(kP, kI, kD);
-        voltageSensor = ActiveOpMode.hardwareMap().voltageSensor.iterator().next();
+//        voltageSensor = ActiveOpMode.hardwareMap().voltageSensor.iterator().next();
     }
 
     @Override
@@ -86,7 +86,7 @@ public class Shooter implements Subsystem {
         }
 
         // Always update readRPM so telemetry is fresh regardless of shooter mode
-        // Motor1 is set REVERSE so raw velocity is already negative when spinning forward — no extra negation needed
+        // Motor1 is set REVERSE so raw velocity is already negative when spinning forward
         double encoderVelocity = flywheelMotor1.getState().getVelocity();
         readRPM = Math.abs(((encoderVelocity * 60.0) / TICKS_PER_REV) * (16.0 / 16.0));
 
@@ -155,7 +155,6 @@ public class Shooter implements Subsystem {
 
     private final ElapsedTime functionRunLength = new ElapsedTime();
 
-    /** Bang-bang controller — use when close to goal. */
     public void runShooterClose() {
         functionRunLength.reset();
 
@@ -170,7 +169,6 @@ public class Shooter implements Subsystem {
         runMs = functionRunLength.milliseconds();
     }
 
-    /** Fixed RPM + hood for far shots (> FAR_DISTANCE_THRESHOLD). */
     public void runShooterFar() {
         functionRunLength.reset();
 
@@ -215,8 +213,6 @@ public class Shooter implements Subsystem {
         }
         return 0.3;
     }
-
-    // ── Commands ──────────────────────────────────────────────────────────────
 
     public Command on() {
         return new InstantCommand(() -> {
