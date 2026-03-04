@@ -222,7 +222,7 @@ public class Competition extends NextFTCOpMode {
             double distMeters = Shooter.INSTANCE.GOAL_DISTANCE * 0.0254;
 
             if (distMeters > Shooter.FAR_DISTANCE_THRESHOLD) {
-                Configuration.TURRET_OFFSET = 3.5;
+//                Configuration.TURRET_OFFSET = 3.5;
                 Shooter.INSTANCE.runShooterFar();
             } else {
 
@@ -231,20 +231,20 @@ public class Competition extends NextFTCOpMode {
 
                 Shooter.INSTANCE.updateKinematics(distMeters, hoodRad);
 
-                double weight = Shooter.INSTANCE.getWeight();
-                Configuration.setAimPointOffset(-X_VELOCITY * weight, -Y_VELOCITY * weight);
-
-                double vyr = ((Y_VELOCITY * 0.0254) * Math.sin(Math.PI / 2 - odoTarget))
-                           + ((X_VELOCITY * 0.0254) * Math.sin(odoTarget));
-                double vxr = -((Y_VELOCITY * 0.0254) * Math.cos(Math.PI / 2 - odoTarget))
-                           + ((X_VELOCITY * 0.0254) * Math.cos(odoTarget));
-
-                double vn = Shooter.INSTANCE.shooterVKinematic() + (vyr * Shooter.vcWeight);
-                double vt = Math.sqrt((vn * vn) + (vxr * vxr));
-
-                Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
-                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) + Shooter.RPM_OFFSET;
-                Configuration.TURRET_OFFSET = 2;
+//                double weight = Shooter.INSTANCE.getWeight();
+//                Configuration.setAimPointOffset(-X_VELOCITY * weight, -Y_VELOCITY * weight);
+//
+//                double vyr = ((Y_VELOCITY * 0.0254) * Math.sin(Math.PI / 2 - odoTarget))
+//                           + ((X_VELOCITY * 0.0254) * Math.sin(odoTarget));
+//                double vxr = -((Y_VELOCITY * 0.0254) * Math.cos(Math.PI / 2 - odoTarget))
+//                           + ((X_VELOCITY * 0.0254) * Math.cos(odoTarget));
+//
+//                double vn = Shooter.INSTANCE.shooterVKinematic() + (vyr * Shooter.vcWeight);
+//                double vt = Math.sqrt((vn * vn) + (vxr * vxr));
+//
+//                Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
+//                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) + Shooter.RPM_OFFSET;
+////                Configuration.TURRET_OFFSET = 2;
                 Shooter.INSTANCE.runShooterClose();
             }
         } else {

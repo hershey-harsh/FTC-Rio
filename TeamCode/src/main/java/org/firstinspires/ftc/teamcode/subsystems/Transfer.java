@@ -24,8 +24,8 @@ public class Transfer implements Subsystem {
     public static double THIRD_GATE_POWER;
     public static double POWER_INCREMENT = 0.1;
     private double CURRENT_POWER = 0;
-    public static double GATE_ONE_OPEN = 0.302, GATE_ONE_CLOSED = 0.387;
-    public static double GATE_TWO_OPEN = 0.564, GATE_TWO_CLOSED = 0.487;
+    public static double GATE_ONE_OPEN = 0.654, GATE_ONE_CLOSED = 0.730;
+    public static double GATE_TWO_OPEN = 0.402, GATE_TWO_CLOSED = 0.333;
 
     public MotorEx transferMotor1;
     public MotorEx transferMotor2;
@@ -83,7 +83,7 @@ public class Transfer implements Subsystem {
     public Command intake() {
         return new InstantCommand(() -> {
             CURRENT_POWER = -INTAKE_POWER;
-            THIRD_GATE_POWER = -INTAKE_POWER/4;
+            THIRD_GATE_POWER = INTAKE_POWER/4;
             transferMotor1.setPower(CURRENT_POWER);
             transferMotor2.setPower(-THIRD_GATE_POWER);
         });

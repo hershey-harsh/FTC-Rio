@@ -10,10 +10,15 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Configuration;
 
+import dev.nextftc.control.ControlSystem;
+import dev.nextftc.control.feedback.PIDCoefficients;
+import dev.nextftc.control.feedforward.BasicFeedforwardParameters;
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.utility.InstantCommand;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.ftc.ActiveOpMode;
+import dev.nextftc.hardware.controllable.MotorGroup;
+import dev.nextftc.hardware.controllable.RunToVelocity;
 import dev.nextftc.hardware.impl.MotorEx;
 import dev.nextftc.hardware.impl.ServoEx;
 import dev.nextftc.hardware.positionable.ServoGroup;
@@ -24,6 +29,8 @@ public class Shooter implements Subsystem {
     public static final double TICKS_PER_REV = 28.0;
 
 //    public static double kP = 0.001, kI = 0, kD = 0, kF = 0.00015;
+    public static PIDCoefficients coefficients = new PIDCoefficients(0.0125, 0.0, 0.0001);
+    public static BasicFeedforwardParameters ffcoefficients = new BasicFeedforwardParameters(0.0, 0.0, 0.0);
 //    private PIDController velController;
 //    private VoltageSensor voltageSensor;
 
@@ -32,6 +39,9 @@ public class Shooter implements Subsystem {
 
     public MotorEx flywheelMotor1;
     public MotorEx flywheelMotor2;
+    public MotorGroup flywheelMotor;
+
+    private ControlSystem controlSystem;
 
     public ServoEx hoodServo1;
     public ServoEx hoodServo2;
@@ -62,10 +72,17 @@ public class Shooter implements Subsystem {
         flywheelMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheelMotor2.getMotor().setDirection(DcMotorEx.Direction.FORWARD);
 
+        flywheelMotor = new MotorGroup(flywheelMotor1, flywheelMotor2);
+
         hoodServo1 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_LEFT));
         hoodServo2 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_RIGHT));
         hoodServo2.getServo().setDirection(Servo.Direction.REVERSE);
         hoodServo = new ServoGroup(hoodServo1, hoodServo2);
+
+        ControlSystem controlSystem = ControlSystem.builder()
+                .velPid(coefficients)
+                .basicFF(ffcoefficients)
+                .build();
 
 //        velController = new PIDController(kP, kI, kD);
 //        voltageSensor = ActiveOpMode.hardwareMap().voltageSensor.iterator().next();
@@ -74,7 +91,8 @@ public class Shooter implements Subsystem {
     @Override
     public void periodic() {
         Pose pose = Configuration.CURRENT_POSE;
-
+        flywheelMotor.setPower(controlSystem.calculate(flywheelMotor.getState()));
+        
         if (Configuration.ALLIANCE == Configuration.Alliance.RED) {
             GOAL_DISTANCE = Math.hypot(
                     (Configuration.RED_GOAL_POSE.getX() + Configuration.X_GOAL_OFFSET) - pose.getX(),
@@ -136,7 +154,7 @@ public class Shooter implements Subsystem {
         vX = distMeters / tof;
         vY = (m - 0.5 * (-9.8) * (t_u * t_u)) / t_u;
 
-        v = Math.sqrt((vX * vX) + (vY * vY)) * 2.1;
+        v = Math.sqrt((vX * vX) + (vY * vY)) * 1.1;
 
         kinematicRPMGoal = (v / (2 * Math.PI * 0.036)) * 60;
     }
@@ -155,18 +173,24 @@ public class Shooter implements Subsystem {
 
     private final ElapsedTime functionRunLength = new ElapsedTime();
 
+    public static double rpmToVelocity(double rpm) {
+        return rpm * TICKS_PER_REV / 60.0;
+    }
+
     public void runShooterClose() {
-        functionRunLength.reset();
+//        functionRunLength.reset();
 
-        if (readRPM < targetRPM) {
-            flywheelMotor1.getMotor().setPower(1);
-            flywheelMotor2.getMotor().setPower(1);
-        } else {
-            flywheelMotor1.getMotor().setPower(0);
-            flywheelMotor2.getMotor().setPower(0);
-        }
+        new RunToVelocity(controlSystem, rpmToVelocity(readRPM), 100).schedule();
 
-        runMs = functionRunLength.milliseconds();
+//        if (readRPM < targetRPM) {
+//            flywheelMotor1.getMotor().setPower(1);
+//            flywheelMotor2.getMotor().setPower(1);
+//        } else {
+//            flywheelMotor1.getMotor().setPower(0);
+//            flywheelMotor2.getMotor().setPower(0);
+//        }
+//
+//        runMs = functionRunLength.milliseconds();
     }
 
     public void runShooterFar() {
