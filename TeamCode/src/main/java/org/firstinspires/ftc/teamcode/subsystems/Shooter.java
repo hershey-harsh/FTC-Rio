@@ -79,7 +79,7 @@ public class Shooter implements Subsystem {
         hoodServo2.getServo().setDirection(Servo.Direction.REVERSE);
         hoodServo = new ServoGroup(hoodServo1, hoodServo2);
 
-        ControlSystem controlSystem = ControlSystem.builder()
+        controlSystem = ControlSystem.builder()
                 .velPid(coefficients)
                 .basicFF(ffcoefficients)
                 .build();
@@ -180,7 +180,7 @@ public class Shooter implements Subsystem {
     public void runShooterClose() {
 //        functionRunLength.reset();
 
-        new RunToVelocity(controlSystem, rpmToVelocity(readRPM), 100).schedule();
+        new RunToVelocity(controlSystem, targetRPM, 100).schedule();
 
 //        if (readRPM < targetRPM) {
 //            flywheelMotor1.getMotor().setPower(1);
@@ -196,18 +196,18 @@ public class Shooter implements Subsystem {
     public void runShooterFar() {
         functionRunLength.reset();
 
-        setHoodAngle(FAR_HOOD_ANGLE);
-        targetRPM = FAR_RPM + RPM_OFFSET;
-
-        if (readRPM < targetRPM) {
-            flywheelMotor1.getMotor().setPower(1);
-            flywheelMotor2.getMotor().setPower(1);
-        } else {
-            flywheelMotor1.getMotor().setPower(0);
-            flywheelMotor2.getMotor().setPower(0);
-        }
-
-        runMs = functionRunLength.milliseconds();
+//        setHoodAngle(FAR_HOOD_ANGLE);
+//        targetRPM = FAR_RPM + RPM_OFFSET;
+//
+//        if (readRPM < targetRPM) {
+//            flywheelMotor1.getMotor().setPower(1);
+//            flywheelMotor2.getMotor().setPower(1);
+//        } else {
+//            flywheelMotor1.getMotor().setPower(0);
+//            flywheelMotor2.getMotor().setPower(0);
+//        }
+//
+//        runMs = functionRunLength.milliseconds();
     }
 
 //    public void runShooter() {
