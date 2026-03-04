@@ -52,8 +52,8 @@ public class Turret implements Subsystem {
         HEADING_DEGREE = Math.toDegrees(pose.getHeading());
 
         if (Configuration.ALLIANCE == Configuration.Alliance.RED) {
-            ODO_TARGET = Math.atan(
-                    ((Configuration.RED_GOAL_POSE.getY() + Configuration.Y_GOAL_OFFSET) - pose.getY())/
+            ODO_TARGET = Math.atan2(
+                    ((Configuration.RED_GOAL_POSE.getY() + Configuration.Y_GOAL_OFFSET) - pose.getY()),
                     ((Configuration.RED_GOAL_POSE.getX() + Configuration.X_GOAL_OFFSET) - pose.getX())
             );
         } else {

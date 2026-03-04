@@ -11,6 +11,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.Configuration;
 
 import dev.nextftc.control.ControlSystem;
+import dev.nextftc.control.KineticState;
 import dev.nextftc.control.feedback.PIDCoefficients;
 import dev.nextftc.control.feedforward.BasicFeedforwardParameters;
 import dev.nextftc.core.commands.Command;
@@ -18,7 +19,6 @@ import dev.nextftc.core.commands.utility.InstantCommand;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.controllable.MotorGroup;
-import dev.nextftc.hardware.controllable.RunToVelocity;
 import dev.nextftc.hardware.impl.MotorEx;
 import dev.nextftc.hardware.impl.ServoEx;
 import dev.nextftc.hardware.positionable.ServoGroup;
@@ -114,6 +114,10 @@ public class Shooter implements Subsystem {
         if (mode == Mode.odometry) {
             setHoodAngle(HOOD_ANGLE);
         }
+
+        // Update velocity setpoint directly every loop instead of scheduling a command
+        double targetVelocity = rpmToVelocity(targetRPM);
+        controlSystem.setGoal(new KineticState(0.0, targetVelocity));
     }
 
     public void setHoodAngle(double degrees) {
@@ -178,19 +182,7 @@ public class Shooter implements Subsystem {
     }
 
     public void runShooterClose() {
-//        functionRunLength.reset();
-
-        new RunToVelocity(controlSystem, targetRPM, 100).schedule();
-
-//        if (readRPM < targetRPM) {
-//            flywheelMotor1.getMotor().setPower(1);
-//            flywheelMotor2.getMotor().setPower(1);
-//        } else {
-//            flywheelMotor1.getMotor().setPower(0);
-//            flywheelMotor2.getMotor().setPower(0);
-//        }
-//
-//        runMs = functionRunLength.milliseconds();
+        // setpoint is updated in periodic()
     }
 
     public void runShooterFar() {
