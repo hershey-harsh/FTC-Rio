@@ -78,6 +78,10 @@ public class Competition extends NextFTCOpMode {
 
         driverControlled.schedule();
 
+        // Turret starts tracking goal immediately
+        Turret.INSTANCE.mode = Turret.Mode.odometry;
+        Turret.INSTANCE.start().schedule();
+
 //        button(() -> gamepad1.a && !gamepad2Override)
 //                .toggleOnBecomesFalse()
 //                .whenBecomesTrue(() -> Limelight.INSTANCE.enableAutoUpdate().schedule())
@@ -221,36 +225,33 @@ public class Competition extends NextFTCOpMode {
         if (Shooter.INSTANCE.mode == Shooter.Mode.odometry) {
             double distMeters = Shooter.INSTANCE.GOAL_DISTANCE * 0.0254;
 
-            if (distMeters > Shooter.FAR_DISTANCE_THRESHOLD) {
-//                Configuration.TURRET_OFFSET = 3.5;
-                Shooter.INSTANCE.runShooterFar();
-            } else {
+            double hoodRad = Math.toRadians(Shooter.INSTANCE.HOOD_ANGLE);
+            double odoTarget = Turret.INSTANCE.ODO_TARGET;
 
-                double hoodRad = Math.toRadians(Shooter.INSTANCE.HOOD_ANGLE);
-                double odoTarget = Turret.INSTANCE.ODO_TARGET;
+            Shooter.INSTANCE.updateKinematics(distMeters, hoodRad);
 
-                Shooter.INSTANCE.updateKinematics(distMeters, hoodRad);
+            double weight = Shooter.INSTANCE.getWeight();
+            Configuration.setAimPointOffset(-X_VELOCITY * weight, -Y_VELOCITY * weight);
 
-                double weight = Shooter.INSTANCE.getWeight();
-                Configuration.setAimPointOffset(-X_VELOCITY * weight, -Y_VELOCITY * weight);
+            double vyr = ((Y_VELOCITY * 0.0254) * Math.sin(Math.PI / 2 - odoTarget))
+                    + ((X_VELOCITY * 0.0254) * Math.sin(odoTarget));
+            double vxr = -((Y_VELOCITY * 0.0254) * Math.cos(Math.PI / 2 - odoTarget))
+                    + ((X_VELOCITY * 0.0254) * Math.cos(odoTarget));
 
-                double vyr = ((Y_VELOCITY * 0.0254) * Math.sin(Math.PI / 2 - odoTarget))
-                           + ((X_VELOCITY * 0.0254) * Math.sin(odoTarget));
-                double vxr = -((Y_VELOCITY * 0.0254) * Math.cos(Math.PI / 2 - odoTarget))
-                           + ((X_VELOCITY * 0.0254) * Math.cos(odoTarget));
+            double vn = Shooter.INSTANCE.shooterVKinematic() + (vyr * Shooter.vcWeight);
+            double vt = Math.sqrt((vn * vn) + (vxr * vxr));
 
-                double vn = Shooter.INSTANCE.shooterVKinematic() + (vyr * Shooter.vcWeight);
-                double vt = Math.sqrt((vn * vn) + (vxr * vxr));
-
-                Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
-                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) + Shooter.RPM_OFFSET;
-//                Configuration.TURRET_OFFSET = 2;
-            }
-        } else {
-            Shooter.INSTANCE.targetRPM = 0;
-            Shooter.INSTANCE.stopShooter();
+            Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
+            Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) * 2.75;
+//                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.getKinematicRPMGoal() * 2.75;
         }
 
+
+//        telemetry.addData("COLOR R:", "%.3f", Transfer.redValues);
+//        telemetry.addData("COLOR G:", "%.3f", Transfer.greenValues);
+//        telemetry.addData("COLOR B:", "%.3f", Transfer.blueValues);
+//        telemetry.addData("Is Purple:", Transfer.INSTANCE.isPurple());
+//        telemetry.addData("Is Green:", Transfer.INSTANCE.isGreen());
 
         telemetry.addData("=== Position ===", "");
         telemetry.addData("Position X:", PedroComponent.follower().getPose().getX());
@@ -264,6 +265,7 @@ public class Competition extends NextFTCOpMode {
         telemetry.addData("=== Turret ===", "");
         telemetry.addData("Turret Mode", Turret.INSTANCE.mode);
         telemetry.addData("Turret Angle", Turret.INSTANCE.TURRET_ANGLE);
+        telemetry.addData("Turret Position", Turret.INSTANCE.TURRET_POSITION);
 //        telemetry.addData("Turret Target", Turret.INSTANCE.TARGET_DEGREE);
 //        telemetry.addData("Turret Servo Pos", "%.3f", Turret.INSTANCE.TURRET_POSITION);
 
@@ -277,6 +279,8 @@ public class Competition extends NextFTCOpMode {
         telemetry.addData("Hood Position", Shooter.INSTANCE.HOOD_POSITION);
         telemetry.addData("TOF estimate (s)", Shooter.INSTANCE.getTof());
         telemetry.addData("Aim Weight (s)", Shooter.INSTANCE.getWeight());
+        telemetry.addData("X Offset", Configuration.X_GOAL_OFFSET);
+        telemetry.addData("Y Offset", Configuration.Y_GOAL_OFFSET);
         //telemetry.addData("Hood Angle", Shooter.INSTANCE.HOOD_ANGLE);
         //telemetry.addData("Close Run (ms)", Shooter.INSTANCE.runMs);
 

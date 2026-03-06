@@ -29,8 +29,8 @@ public class Shooter implements Subsystem {
     public static final double TICKS_PER_REV = 28.0;
 
 //    public static double kP = 0.001, kI = 0, kD = 0, kF = 0.00015;
-    public static PIDCoefficients coefficients = new PIDCoefficients(0.0125, 0.0, 0.0001);
-    public static BasicFeedforwardParameters ffcoefficients = new BasicFeedforwardParameters(0.0, 0.0, 0.0);
+    public static PIDCoefficients coefficients = new PIDCoefficients(0.001, 0.0, 0);
+    public static BasicFeedforwardParameters ffcoefficients = new BasicFeedforwardParameters(0.00015, 0.0, 0.0);
 //    private PIDController velController;
 //    private VoltageSensor voltageSensor;
 
@@ -76,7 +76,7 @@ public class Shooter implements Subsystem {
 
         hoodServo1 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_LEFT));
         hoodServo2 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.HOOD_SERVO_RIGHT));
-        hoodServo2.getServo().setDirection(Servo.Direction.REVERSE);
+        hoodServo1.getServo().setDirection(Servo.Direction.REVERSE);
         hoodServo = new ServoGroup(hoodServo1, hoodServo2);
 
         controlSystem = ControlSystem.builder()
@@ -91,7 +91,6 @@ public class Shooter implements Subsystem {
     @Override
     public void periodic() {
         Pose pose = Configuration.CURRENT_POSE;
-        flywheelMotor.setPower(controlSystem.calculate(flywheelMotor.getState()));
         
         if (Configuration.ALLIANCE == Configuration.Alliance.RED) {
             GOAL_DISTANCE = Math.hypot(
@@ -108,16 +107,17 @@ public class Shooter implements Subsystem {
         double encoderVelocity = flywheelMotor1.getState().getVelocity();
         readRPM = Math.abs(((encoderVelocity * 60.0) / TICKS_PER_REV) * (16.0 / 16.0));
 
-        // Hood angle is computed here; SOTM kinematics and RPM are handled in onUpdate
+        // Only auto-set hood angle in odometry mode; leave it alone in manual so user can adjust it
         double distMeters = GOAL_DISTANCE * 0.0254;
-        HOOD_ANGLE = getHoodAngle(distMeters);
         if (mode == Mode.odometry) {
+            HOOD_ANGLE = getHoodAngle(distMeters);
             setHoodAngle(HOOD_ANGLE);
         }
 
         // Update velocity setpoint directly every loop instead of scheduling a command
         double targetVelocity = rpmToVelocity(targetRPM);
         controlSystem.setGoal(new KineticState(0.0, targetVelocity));
+        flywheelMotor.setPower(controlSystem.calculate(flywheelMotor.getState()));
     }
 
     public void setHoodAngle(double degrees) {
@@ -132,7 +132,8 @@ public class Shooter implements Subsystem {
     }
 
     public double getHoodAngle(double meters) {
-        return Math.max((-4.8701 * meters) + 59.754, 43);
+//        return Math.max((-4.8701 * meters) + 59.754, 43);
+        return Math.max((-9.1295 * meters) + 77.73622, 43);
     }
 
     private double a, b, n, t_u, t_g, tof, vX, vY, v, m;
@@ -140,7 +141,6 @@ public class Shooter implements Subsystem {
 
     public static double w = Configuration.SHOOTER_HEIGHT_TO_GOAL;
     public static double vcWeight = 0.37;
-    public static double RPM_OFFSET = 0;
     public static double FAR_DISTANCE_THRESHOLD = 3.0; // meters
     public static double FAR_RPM = 4400;
     public static double FAR_HOOD_ANGLE = 50;
@@ -158,7 +158,7 @@ public class Shooter implements Subsystem {
         vX = distMeters / tof;
         vY = (m - 0.5 * (-9.8) * (t_u * t_u)) / t_u;
 
-        v = Math.sqrt((vX * vX) + (vY * vY)) * 1.1;
+        v = Math.sqrt((vX * vX) + (vY * vY));
 
         kinematicRPMGoal = (v / (2 * Math.PI * 0.036)) * 60;
     }

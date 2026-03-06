@@ -5,11 +5,14 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Configuration;
 
 import dev.nextftc.core.commands.Command;
 import dev.nextftc.core.commands.utility.InstantCommand;
 import dev.nextftc.core.subsystems.Subsystem;
+import dev.nextftc.core.units.Distance;
 import dev.nextftc.ftc.ActiveOpMode;
 import dev.nextftc.hardware.controllable.MotorGroup;
 import dev.nextftc.hardware.impl.MotorEx;
@@ -33,17 +36,11 @@ public class Transfer implements Subsystem {
     public ServoEx servoGate1;
     public ServoEx servoGate2;
 
-//    public RevColorSensorV3 gate3Sensor;
-//
-//    public static double redValues = 0;
-//    public static double blueValues = 0;
-//    public static double greenValues = 0;
-//    public static double red = 0;
-//    public static double blue = 0;
-//    public static double green = 0;
-//
-//    public NormalizedRGBA colors;
-//    public static boolean override = false;
+    public RevColorSensorV3 gate3Sensor;
+    public static double gate3Distance;
+
+    public NormalizedRGBA colors;
+    public static boolean override = false;
 
     @Override
     public void initialize() {
@@ -53,32 +50,15 @@ public class Transfer implements Subsystem {
         servoGate1 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.SERVO_GATE_LEFT));
         servoGate2 = new ServoEx(ActiveOpMode.hardwareMap().get(Servo.class, Configuration.SERVER_GATE_RIGHT));
 
-//        gate3Sensor = ActiveOpMode.hardwareMap().get(RevColorSensorV3.class, Configuration.GATE_3_SENSOR);
+        gate3Sensor = ActiveOpMode.hardwareMap().get(RevColorSensorV3.class, Configuration.GATE_3_SENSOR);
 
         closeGate();
     }
 
-//    @Override
-//    public void periodic() {
-//        colors = gate3Sensor.getNormalizedColors();
-//
-//        redValues = colors.red;
-//        greenValues = colors.green;
-//        blueValues = colors.blue;
-//
-//        if ((isPurple() || isGreen()) && !override) {
-//            transferMotor2.getMotor().setMotorDisable();
-//        } else if (!isPurple() && !isGreen()) {
-//            transferMotor2.getMotor().setMotorEnable();
-//        }
-//    }
-//
-//    public boolean isPurple(){
-//        return red > redValues && blue > blueValues && green > greenValues;
-//    }
-//    public boolean isGreen(){
-//        return red < redValues && blue < blueValues && green > greenValues;
-//    }
+    @Override
+    public void periodic() {
+        gate3Distance = gate3Sensor.getDistance(DistanceUnit.CM); //BELOW 3 CM IS A BALL
+    }
 
     public Command intake() {
         return new InstantCommand(() -> {

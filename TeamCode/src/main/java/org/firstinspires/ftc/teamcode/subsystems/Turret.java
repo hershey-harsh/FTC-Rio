@@ -20,6 +20,7 @@ public class Turret implements Subsystem {
     public static final Turret INSTANCE = new Turret();
 
     public static double ANGLE_INCREMENT = 1.0;
+    public static double BACKLASH_COMP_DEGREES = 2; // pre-load gears to take up backlash slack
 
     public ServoEx turretServo1;
     public ServoEx turretServo2;
@@ -64,17 +65,20 @@ public class Turret implements Subsystem {
         }
 
         if (mode == Mode.odometry) {
-            TARGET_DEGREE = Math.toDegrees(ODO_TARGET) - HEADING_DEGREE;
-            setAngle(TARGET_DEGREE);
+            double newTarget = Math.toDegrees(ODO_TARGET) - HEADING_DEGREE;
+            TARGET_DEGREE = newTarget;
+            setAngle(TARGET_DEGREE + Configuration.TURRET_OFFSET);
         } else if (mode == Mode.manual) {
-            setAngle(TARGET_DEGREE);
+            setAngle(TARGET_DEGREE + Configuration.TURRET_OFFSET);
         }
     }
 
     private void setAngle(double angle) {
-        TURRET_ANGLE = angle + Configuration.TURRET_OFFSET;
+        TURRET_ANGLE = angle;
+        // Bias slightly in the direction of the angle to pre-load gears and take up backlash
+//        double biasedAngle = angle + Math.signum(angle) * BACKLASH_COMP_DEGREES;
+//        TURRET_POSITION = interpolateAngle(biasedAngle);
         TURRET_POSITION = interpolateAngle(angle);
-
         turretServo.setPosition(TURRET_POSITION);
     }
 

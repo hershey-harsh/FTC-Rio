@@ -9,15 +9,15 @@ public class Configuration {
     public static final String LEFT_REAR_MOTOR = "motor2";
     public static final String ODOMETRY_POD = "odo";
     public static final String LIMELIGHT = "limelight";
-    public static final String TURRET_SERVO_LEFT = "servo2B";
-    public static final String TURRET_SERVO_RIGHT = "servo3B";
+    public static final String TURRET_SERVO_LEFT = "servo0B"; // servo2B
+    public static final String TURRET_SERVO_RIGHT = "servo5B"; // servo3B
     public static final String TRANSFER_MOTOR_ONE = "motor3B";
     public static final String TRANSFER_MOTOR_TWO = "motor2B";
     public static final String GATE_3_SENSOR = "color";
-    public static final String SERVO_GATE_LEFT = "servo0B";
+    public static final String SERVO_GATE_LEFT = "servo2B"; // servo0B
     public static final String SERVER_GATE_RIGHT = "servo1B";
-    public static final String HOOD_SERVO_LEFT = "servo4B";
-    public static final String HOOD_SERVO_RIGHT = "servo5B";
+    public static final String HOOD_SERVO_RIGHT = "servo4B";
+    public static final String HOOD_SERVO_LEFT = "servo3B"; //servo%B
     public static final String ROBOT_LIGHT = "light";
     public static final String TURRET_LIGHT = "servo5";
     public static final String RIGHT_TURRET_MOTOR = "motor0B";
@@ -37,7 +37,7 @@ public class Configuration {
     }
 
     public static double ARTIFACT_TRANSFER_TIME = 0.3;
-    public static double SHOOTER_HEIGHT_TO_GOAL = 0.7878;
+    public static double SHOOTER_HEIGHT_TO_GOAL = 0.8;
     public static double SHOOTER_TIME = 0.5;
 
 
