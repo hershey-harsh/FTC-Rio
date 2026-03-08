@@ -242,7 +242,8 @@ public class Competition extends NextFTCOpMode {
             double vt = Math.sqrt((vn * vn) + (vxr * vxr));
 
             Shooter.INSTANCE.setHoodAngle(Shooter.INSTANCE.HOOD_ANGLE);
-            Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) * 2.75;
+            Configuration.TURRET_OFFSET = 0;
+            Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.vMSToRPM(vt) * 2.75; //2.75 weight if stationary
 //                Shooter.INSTANCE.targetRPM = Shooter.INSTANCE.getKinematicRPMGoal() * 2.75;
         }
 

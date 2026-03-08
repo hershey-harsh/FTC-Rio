@@ -36,9 +36,9 @@ public class Configuration {
         Y_GOAL_OFFSET = yOffset;
     }
 
-    public static double ARTIFACT_TRANSFER_TIME = 0.3;
+    public static double ARTIFACT_TRANSFER_TIME = 0.7;
     public static double SHOOTER_HEIGHT_TO_GOAL = 0.8;
-    public static double SHOOTER_TIME = 0.5;
+    public static double SHOOTER_TIME = 0.75;
 
 
     public static int RED_LIMELIGHT_PIPELINE = 0;

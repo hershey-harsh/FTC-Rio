@@ -13,7 +13,7 @@ import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.pedropathing.ftc.drivetrains.MecanumConstants;
-import com.pedropathing.ftc.drivetrains.MecanumEx;
+import com.pedropathing.ftc.drivetrains.Mecanum;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Configuration;
@@ -25,7 +25,7 @@ public class Constants {
             // kP usually ranges from 0.05-0.3. kP changes are harder to notice and have minimal effects.
             // However, tune kP as high as possible so it will give you the most holding strength and accuracy
             // but without jittering the robot. You may also lower kP if you want smoother reactions.
-            .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(0.2, 0.086595400785,0.0025996451))
+            .predictiveBrakingCoefficients(new PredictiveBrakingCoefficients(0.3, 0.086595400785,0.0025996451))
             .headingPIDFCoefficients(new PIDFCoefficients(1.2, 0, 0.08, 0.025)); //TODO: Fine tune these values using automatic tuner
             //.secondaryHeadingPIDFCoefficients((new PIDFCoefficients(1, 0, 0.01, 0.025))) //TODO: Fine tune these values
             //.useSecondaryHeadingPIDF(true)
@@ -55,7 +55,7 @@ public class Constants {
     public static Follower createFollower(HardwareMap hardwareMap) {
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .pathConstraints(pathConstraints)
-                .setDrivetrain(new MecanumEx(hardwareMap, driveConstants))
+                .setDrivetrain(new Mecanum(hardwareMap, driveConstants))
                 .pinpointLocalizer(localizerConstants)
                 .build();
     }
@@ -82,7 +82,7 @@ public class Constants {
         return new FollowerBuilder(followerConstants, hardwareMap)
                 .pathConstraints(pathConstraints)
                 .setLocalizer(Configuration.fusionLocalizer)
-                .setDrivetrain(new MecanumEx(hardwareMap, driveConstants))
+                .setDrivetrain(new Mecanum(hardwareMap, driveConstants))
                 .build();
     }
 }

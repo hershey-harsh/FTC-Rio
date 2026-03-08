@@ -140,8 +140,7 @@ public class Shooter implements Subsystem {
     private double kinematicRPMGoal = 0;
 
     public static double w = Configuration.SHOOTER_HEIGHT_TO_GOAL;
-    public static double vcWeight = 0.37;
-    public static double FAR_DISTANCE_THRESHOLD = 3.0; // meters
+    public static double vcWeight = -0.95;
     public static double FAR_RPM = 4400;
     public static double FAR_HOOD_ANGLE = 50;
 

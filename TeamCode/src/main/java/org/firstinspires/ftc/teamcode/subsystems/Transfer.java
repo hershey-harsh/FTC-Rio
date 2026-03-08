@@ -4,12 +4,13 @@ import com.qualcomm.hardware.rev.RevColorSensorV3;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.NormalizedRGBA;
 import com.qualcomm.robotcore.hardware.Servo;
-
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Configuration;
 
 import dev.nextftc.core.commands.Command;
+import dev.nextftc.core.commands.delays.Delay;
+import dev.nextftc.core.commands.groups.SequentialGroup;
 import dev.nextftc.core.commands.utility.InstantCommand;
 import dev.nextftc.core.subsystems.Subsystem;
 import dev.nextftc.core.units.Distance;
@@ -42,6 +43,12 @@ public class Transfer implements Subsystem {
     public NormalizedRGBA colors;
     public static boolean override = false;
 
+    // Gate 3 auto-stop
+    private boolean gateOverride = false;       // true when openGate() is called — ignores distance
+    private boolean gate3Stopped = false;        // true after ball detected and motor stopped
+    private boolean started = false;             // true after intake() is called — prevents running during init
+    private static final double GATE3_THRESHOLD = 3.0;  // cm
+
     @Override
     public void initialize() {
         transferMotor1 = new MotorEx(ActiveOpMode.hardwareMap().get(DcMotorEx.class, Configuration.TRANSFER_MOTOR_ONE));
@@ -52,18 +59,45 @@ public class Transfer implements Subsystem {
 
         gate3Sensor = ActiveOpMode.hardwareMap().get(RevColorSensorV3.class, Configuration.GATE_3_SENSOR);
 
-        closeGate();
+        started = false;
+        gateOverride = false;
+        gate3Stopped = false;
+        servoGate1.setPosition(GATE_ONE_CLOSED);
+        servoGate2.setPosition(GATE_TWO_CLOSED);
     }
 
     @Override
     public void periodic() {
-        gate3Distance = gate3Sensor.getDistance(DistanceUnit.CM); //BELOW 3 CM IS A BALL
+        gate3Distance = gate3Sensor.getDistance(DistanceUnit.CM);
+
+        if (!started) return;
+        if (gateOverride) return;
+
+        if (gate3Distance < GATE3_THRESHOLD) {
+            // Ball detected — run for 0.5s then stop
+            if (!gate3Stopped) {
+                gate3Stopped = true;
+                new SequentialGroup(
+                        new Delay(0.5),
+                        new InstantCommand(() -> {
+                            if (!gateOverride) transferMotor2.setPower(0);
+                        })
+                ).schedule();
+            }
+        } else {
+            // No ball — if motor was stopped, restart it
+            if (gate3Stopped) {
+                gate3Stopped = false;
+                transferMotor2.setPower(-INTAKE_POWER);
+            }
+        }
     }
 
     public Command intake() {
         return new InstantCommand(() -> {
+            started = true;
             CURRENT_POWER = -INTAKE_POWER;
-            THIRD_GATE_POWER = INTAKE_POWER/4;
+            THIRD_GATE_POWER = INTAKE_POWER;
             transferMotor1.setPower(CURRENT_POWER);
             transferMotor2.setPower(-THIRD_GATE_POWER);
         });
@@ -129,6 +163,8 @@ public class Transfer implements Subsystem {
 
     public  Command openGate() {
         return new InstantCommand(() -> {
+            gateOverride = true;
+            gate3Stopped = false;
             THIRD_GATE_POWER = INTAKE_POWER;
             servoGate1.setPosition(GATE_ONE_OPEN);
             servoGate2.setPosition(GATE_TWO_OPEN);
@@ -138,7 +174,9 @@ public class Transfer implements Subsystem {
 
     public Command closeGate() {
         return new InstantCommand(() -> {
-            THIRD_GATE_POWER = INTAKE_POWER / 4;
+            gateOverride = false;
+            gate3Stopped = false;
+            THIRD_GATE_POWER = INTAKE_POWER;
             transferMotor2.setPower(-THIRD_GATE_POWER);
             servoGate1.setPosition(GATE_ONE_CLOSED);
             servoGate2.setPosition(GATE_TWO_CLOSED);
